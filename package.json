@@ -1,0 +1,39 @@
+{
+  "name": "riddy",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.23.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "db:check": "pnpm --filter @riddy/api db:check",
+    "db:down": "docker compose down",
+    "db:generate": "pnpm --filter @riddy/api db:generate",
+    "db:logs": "docker compose logs -f postgres",
+    "db:migrate": "pnpm --filter @riddy/api db:migrate",
+    "db:seed": "pnpm --filter @riddy/api db:seed",
+    "db:studio": "pnpm --filter @riddy/api db:studio",
+    "db:up": "docker compose up -d postgres",
+    "dev": "turbo run dev --parallel",
+    "dev:api": "pnpm --filter @riddy/api dev",
+    "dev:web": "pnpm --filter @riddy/web dev",
+    "dev:worker": "pnpm --filter @riddy/api dev:worker",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "infra:up": "docker compose up -d postgres minio redis",
+    "lint": "turbo run lint",
+    "redis:logs": "docker compose logs -f redis",
+    "redis:up": "docker compose up -d redis",
+    "test": "turbo run test",
+    "storage:logs": "docker compose logs -f minio",
+    "storage:up": "docker compose up -d minio",
+    "start:worker": "pnpm --filter @riddy/api start:worker",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "turbo": "^2.5.6"
+  }
+}

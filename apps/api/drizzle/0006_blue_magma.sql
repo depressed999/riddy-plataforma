@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "payments_booking_active_unique" ON "payments" USING btree ("booking_id") WHERE "payments"."status" in ('created', 'pending', 'in_process', 'approved');--> statement-breakpoint
+ALTER TABLE "payments" ADD CONSTRAINT "payments_amount_positive_check" CHECK ("payments"."amount" > 0);

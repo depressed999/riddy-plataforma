@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# build output
+.next/
+dist/
+coverage/
+.turbo/
+.pnpm-store/
+
+# local environment files
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+pnpm-debug.log*
+
+# editor and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
