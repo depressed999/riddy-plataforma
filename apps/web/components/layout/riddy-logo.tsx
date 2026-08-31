@@ -8,10 +8,7 @@ type RiddyLogoProps = {
   compact?: boolean;
 };
 
-export function RiddyLogo({
-  className,
-  compact = false,
-}: RiddyLogoProps) {
+export function RiddyLogo({ className, compact = false }: RiddyLogoProps) {
   return (
     <Link
       aria-label="Riddy — página inicial"
@@ -30,11 +27,7 @@ export function RiddyLogo({
         width={140}
       />
 
-      {compact ? (
-        <span className="sr-only"></span>
-      ) : (
-        <span>Riddy</span>
-      )}
+      {compact ? <span className="sr-only"></span> : <span>Riddy</span>}
     </Link>
   );
 }
