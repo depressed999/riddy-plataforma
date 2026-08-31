@@ -37,8 +37,7 @@ export function AuthShell({
                 className="mt-0.5 shrink-0 text-primary"
                 size={20}
               />
-              Sua sessão utiliza cookie HttpOnly e pode ser encerrada a qualquer
-              momento.
+              Seus dados estão protegidos com criptografia de ponta a ponta
             </div>
           </div>
 

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-
+import Image from 'next/image';
 import { Container } from '@/components/layout/container';
 import { RiddyLogo } from '@/components/layout/riddy-logo';
 
@@ -14,7 +14,17 @@ export function PublicFooter() {
   return (
     <footer className="border-t border-border bg-muted">
       <Container className="flex flex-col gap-8 py-8 md:flex-row md:items-center md:justify-between">
-        <RiddyLogo />
+        <Link href="/" aria-label="Página inicial">
+  <Image
+    src="/riddy-logo-wordmark.png"       
+    alt="Logo"
+    width={130}
+    height={36}
+    className="h-19 w-auto object-contain"
+  />
+  
+</Link>
+
 
         <nav
           aria-label="Links institucionais"

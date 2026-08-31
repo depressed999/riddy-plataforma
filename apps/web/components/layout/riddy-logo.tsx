@@ -1,4 +1,4 @@
-import { CarFront } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
@@ -8,7 +8,10 @@ type RiddyLogoProps = {
   compact?: boolean;
 };
 
-export function RiddyLogo({ className, compact = false }: RiddyLogoProps) {
+export function RiddyLogo({
+  className,
+  compact = false,
+}: RiddyLogoProps) {
   return (
     <Link
       aria-label="Riddy — página inicial"
@@ -18,10 +21,20 @@ export function RiddyLogo({ className, compact = false }: RiddyLogoProps) {
       )}
       href="/"
     >
-      <span className="grid size-9 place-items-center rounded-md bg-primary text-primary-foreground">
-        <CarFront aria-hidden="true" size={20} strokeWidth={1.8} />
-      </span>
-      {compact ? <span className="sr-only">Riddy</span> : <span>Riddy</span>}
+      <Image
+        alt="Riddy"
+        className="h-20 w-auto object-contain"
+        height={40}
+        priority
+        src="/riddy-logo-icon.png"
+        width={140}
+      />
+
+      {compact ? (
+        <span className="sr-only"></span>
+      ) : (
+        <span>Riddy</span>
+      )}
     </Link>
   );
 }
