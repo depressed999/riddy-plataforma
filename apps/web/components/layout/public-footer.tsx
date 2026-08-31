@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
+
 import { Container } from '@/components/layout/container';
-import { RiddyLogo } from '@/components/layout/riddy-logo';
 
 const footerLinks = [
   { href: '/#termos', label: 'Termos de uso' },
