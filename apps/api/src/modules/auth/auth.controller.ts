@@ -194,22 +194,24 @@ export class AuthController {
     reply: FastifyReply,
     session: AuthenticatedSession,
   ): void {
+    const sameSite = this.cookieSameSite();
     reply.setCookie(sessionCookieName, session.token, {
       expires: session.expiresAt,
       httpOnly: true,
       path: '/',
-      sameSite: 'lax',
-      secure: this.isProduction(),
+      sameSite,
+      secure: sameSite === 'none' || this.isProduction(),
     });
   }
 
   private oauthCookieOptions() {
+    const sameSite = this.cookieSameSite();
     return {
       httpOnly: true,
       maxAge: 600,
       path: googleCallbackPath,
-      sameSite: 'lax' as const,
-      secure: this.isProduction(),
+      sameSite,
+      secure: sameSite === 'none' || this.isProduction(),
     };
   }
 
@@ -220,5 +222,11 @@ export class AuthController {
 
   private isProduction(): boolean {
     return this.configService.get<string>('NODE_ENV') === 'production';
+  }
+
+  private cookieSameSite(): 'lax' | 'none' | 'strict' {
+    const value = this.configService.get<string>('COOKIE_SAME_SITE', 'lax');
+    if (value === 'none' || value === 'strict') return value;
+    return 'lax';
   }
 }

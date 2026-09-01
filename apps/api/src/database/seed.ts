@@ -17,9 +17,12 @@ if (!databaseUrl) {
   throw new Error('DATABASE_URL não foi definida.');
 }
 
-if (process.env.NODE_ENV === 'production') {
+if (
+  process.env.NODE_ENV === 'production' &&
+  process.env.SEED_ALLOW_PRODUCTION !== 'true'
+) {
   throw new Error(
-    'O seed de desenvolvimento não pode ser executado em produção.',
+    'O seed de demonstração não pode ser executado em produção sem SEED_ALLOW_PRODUCTION=true.',
   );
 }
 

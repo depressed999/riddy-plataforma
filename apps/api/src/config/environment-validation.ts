@@ -50,6 +50,7 @@ export function validateEnvironment(
     'MERCADO_PAGO_WEBHOOK_SECRET',
     'MERCADO_PAGO_WEBHOOK_URL',
   ]);
+  validateCookieSameSite(environment, nodeEnvironment);
 
   if (nodeEnvironment === 'production') {
     validateProductionEnvironment(environment);
@@ -252,6 +253,22 @@ function stringValue(
 ): string | undefined {
   const value = environment[key];
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function validateCookieSameSite(
+  environment: Record<string, unknown>,
+  nodeEnvironment: string,
+): void {
+  const value = stringValue(environment, 'COOKIE_SAME_SITE');
+  if (!value) return;
+  if (!['lax', 'none', 'strict'].includes(value)) {
+    fail('COOKIE_SAME_SITE deve ser lax, strict ou none.');
+  }
+  if (value === 'none' && nodeEnvironment !== 'production') {
+    fail(
+      'COOKIE_SAME_SITE=none requer NODE_ENV=production (cookies SameSite=None exigem Secure).',
+    );
+  }
 }
 
 function fail(message: string): never {
