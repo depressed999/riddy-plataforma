@@ -10,6 +10,7 @@ const booleanKeys = [
   'JOBS_SCHEDULER_ENABLED',
   'JOBS_WORKER_ENABLED',
   'S3_FORCE_PATH_STYLE',
+  'S3_MANAGE_BUCKET_CORS',
   'SWAGGER_ENABLED',
 ] as const;
 

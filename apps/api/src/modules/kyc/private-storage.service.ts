@@ -26,6 +26,7 @@ export class PrivateStorageService {
   private readonly bucket: string;
   private readonly client: S3Client;
   private readonly isProduction: boolean;
+  private readonly manageBucketCors: boolean;
   private readonly signedUrlTtlSeconds: number;
   private bucketReady?: Promise<void>;
 
@@ -43,6 +44,18 @@ export class PrivateStorageService {
       'riddy-development-secret',
     );
     this.bucket = configService.get<string>('S3_KYC_BUCKET', 'riddy-kyc');
+    const endpoint = configService.get<string>(
+      'S3_ENDPOINT',
+      'http://localhost:9000',
+    );
+    const manageBucketCors = configService.get<string>('S3_MANAGE_BUCKET_CORS');
+    // Supabase aplica CORS na borda e não implementa a operação S3
+    // PutBucketCors. Outros provedores, incluindo o MinIO local, mantêm o
+    // comportamento anterior, com possibilidade de override pela variável.
+    this.manageBucketCors =
+      manageBucketCors === undefined
+        ? !isSupabaseStorageEndpoint(endpoint)
+        : manageBucketCors === 'true';
     this.signedUrlTtlSeconds = boundedNumber(
       configService.get<string>('S3_SIGNED_URL_TTL_SECONDS'),
       300,
@@ -51,10 +64,7 @@ export class PrivateStorageService {
     );
     this.client = new S3Client({
       credentials: { accessKeyId, secretAccessKey },
-      endpoint: configService.get<string>(
-        'S3_ENDPOINT',
-        'http://localhost:9000',
-      ),
+      endpoint,
       forcePathStyle:
         configService.get<string>('S3_FORCE_PATH_STYLE', 'true') === 'true',
       region: configService.get<string>('S3_REGION', 'us-east-1'),
@@ -175,6 +185,10 @@ export class PrivateStorageService {
       }
     }
 
+    if (!this.manageBucketCors) {
+      return;
+    }
+
     try {
       const allowedOrigins = this.configService
         .get<string>('CORS_ORIGIN', 'http://localhost:3000')
@@ -216,6 +230,20 @@ export class PrivateStorageService {
       throw new Error(`${key} is required in production.`);
     }
     return developmentFallback;
+  }
+}
+
+function isSupabaseStorageEndpoint(endpoint: string): boolean {
+  try {
+    const url = new URL(endpoint);
+    const hostname = url.hostname.toLowerCase();
+    return (
+      hostname.endsWith('.storage.supabase.co') ||
+      (hostname.endsWith('.supabase.co') &&
+        url.pathname.startsWith('/storage/v1/s3'))
+    );
+  } catch {
+    return false;
   }
 }
 
