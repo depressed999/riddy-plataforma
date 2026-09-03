@@ -78,6 +78,13 @@ export type HostVehicleInput = {
   year: number;
 };
 
+export type VehicleImageUpload = {
+  expiresAt: string;
+  headers: Record<string, string>;
+  storageKey: string;
+  uploadUrl: string;
+};
+
 export type HostBooking = {
   createdAt: string;
   currency: 'BRL';

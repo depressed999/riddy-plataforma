@@ -232,6 +232,122 @@ export class HostsRepository {
     return this.toVehicle(vehicle, images.get(vehicle.id) ?? []);
   }
 
+  async addVehicleImage(input: {
+    altText: string;
+    storageKey: string;
+    vehicleId: string;
+  }): Promise<HostVehicle> {
+    await this.databaseService.database.transaction(async (transaction) => {
+      const existing = await transaction
+        .select({ id: vehicleImages.id })
+        .from(vehicleImages)
+        .where(eq(vehicleImages.vehicleId, input.vehicleId))
+        .orderBy(asc(vehicleImages.sortOrder));
+      await transaction.insert(vehicleImages).values({
+        altText: input.altText,
+        isCover: existing.length === 0,
+        sortOrder: existing.length,
+        storageKey: input.storageKey,
+        vehicleId: input.vehicleId,
+      });
+    });
+    return this.requiredVehicle(input.vehicleId);
+  }
+
+  async findOwnedVehicleImage(
+    userId: string,
+    vehicleId: string,
+    imageId: string,
+  ): Promise<VehicleImage | null> {
+    const [row] = await this.databaseService.database
+      .select({ image: vehicleImages })
+      .from(vehicleImages)
+      .innerJoin(vehicles, eq(vehicleImages.vehicleId, vehicles.id))
+      .where(
+        and(
+          eq(vehicleImages.id, imageId),
+          eq(vehicleImages.vehicleId, vehicleId),
+          eq(vehicles.ownerId, userId),
+        ),
+      )
+      .limit(1);
+    return row ? this.toImage(row.image) : null;
+  }
+
+  async setVehicleImageCover(
+    vehicleId: string,
+    imageId: string,
+  ): Promise<HostVehicle> {
+    await this.databaseService.database.transaction(async (transaction) => {
+      await transaction
+        .update(vehicleImages)
+        .set({ isCover: false })
+        .where(eq(vehicleImages.vehicleId, vehicleId));
+      await transaction
+        .update(vehicleImages)
+        .set({ isCover: true })
+        .where(
+          and(
+            eq(vehicleImages.id, imageId),
+            eq(vehicleImages.vehicleId, vehicleId),
+          ),
+        );
+    });
+    return this.requiredVehicle(vehicleId);
+  }
+
+  async reorderVehicleImages(
+    vehicleId: string,
+    imageIds: string[],
+  ): Promise<HostVehicle> {
+    await this.databaseService.database.transaction(async (transaction) => {
+      for (const [sortOrder, imageId] of imageIds.entries()) {
+        await transaction
+          .update(vehicleImages)
+          .set({ sortOrder })
+          .where(
+            and(
+              eq(vehicleImages.id, imageId),
+              eq(vehicleImages.vehicleId, vehicleId),
+            ),
+          );
+      }
+    });
+    return this.requiredVehicle(vehicleId);
+  }
+
+  async deleteVehicleImage(
+    vehicleId: string,
+    imageId: string,
+  ): Promise<HostVehicle> {
+    await this.databaseService.database.transaction(async (transaction) => {
+      const [deleted] = await transaction
+        .delete(vehicleImages)
+        .where(
+          and(
+            eq(vehicleImages.id, imageId),
+            eq(vehicleImages.vehicleId, vehicleId),
+          ),
+        )
+        .returning({ isCover: vehicleImages.isCover });
+      if (deleted?.isCover) {
+        const [next] = await transaction
+          .select({ id: vehicleImages.id })
+          .from(vehicleImages)
+          .where(eq(vehicleImages.vehicleId, vehicleId))
+          .orderBy(asc(vehicleImages.sortOrder))
+          .limit(1);
+        if (next) {
+          await transaction
+            .update(vehicleImages)
+            .set({ isCover: true })
+            .where(eq(vehicleImages.id, next.id));
+        }
+      }
+    });
+    return this.requiredVehicle(vehicleId);
+  }
+
   async listBookings(userId: string): Promise<HostBooking[]> {
     const rows = await this.databaseService.database
       .select({ booking: bookings, renter: users, vehicle: vehicles })
@@ -398,6 +514,19 @@ export class HostsRepository {
       result.set(row.vehicleId, images);
     }
     return result;
+  }
+
+  private async requiredVehicle(vehicleId: string): Promise<HostVehicle> {
+    const [row] = await this.databaseService.database
+      .select()
+      .from(vehicles)
+      .where(eq(vehicles.id, vehicleId))
+      .limit(1);
+    if (!row) {
+      throw new Error('O veículo não foi encontrado após atualizar as fotos.');
+    }
+    const images = await this.imagesForVehicles([vehicleId]);
+    return this.toVehicle(row, images.get(vehicleId) ?? []);
   }
 
   private toProfile(profile: HostProfileSelect): HostProfile {

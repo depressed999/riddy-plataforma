@@ -1,10 +1,12 @@
 import {
   Controller,
   Get,
+  HttpStatus,
   Inject,
   Param,
   ParseUUIDPipe,
   Query,
+  Redirect,
 } from '@nestjs/common';
 import {
   ApiNotFoundResponse,
@@ -49,6 +51,15 @@ export class VehiclesController {
       transmission: query.transmission,
       type: query.type,
     });
+  }
+
+  @Get('images/:imageId/content')
+  @Redirect('', HttpStatus.FOUND)
+  @ApiOperation({ summary: 'Abre uma foto de um veículo ativo' })
+  async getImageContent(
+    @Param('imageId', new ParseUUIDPipe({ version: '4' })) imageId: string,
+  ): Promise<{ url: string }> {
+    return { url: await this.vehiclesService.imageContentUrl(imageId) };
   }
 
   @Get(':id')

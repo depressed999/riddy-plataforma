@@ -1,5 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
+import type { PrivateStorageService } from '../kyc/private-storage.service';
 import type { VehiclesRepository } from './vehicles.repository';
 import type { VehiclesCacheService } from './vehicles-cache.service';
 import { VehiclesService } from './vehicles.service';
@@ -38,6 +39,7 @@ describe('VehiclesService', () => {
   const search = jest.fn<Promise<PaginatedVehicles>, [VehicleSearch]>();
   const findActiveById = jest.fn<Promise<Vehicle | null>, [string]>();
   const repository = {
+    findActiveImage: jest.fn(),
     findActiveById,
     search,
   } as unknown as VehiclesRepository;
@@ -50,7 +52,10 @@ describe('VehiclesService', () => {
         loader(),
     ),
   } as unknown as VehiclesCacheService;
-  const service = new VehiclesService(repository, cache);
+  const storage = {
+    createViewUrl: jest.fn(),
+  } as unknown as PrivateStorageService;
+  const service = new VehiclesService(repository, cache, storage);
   const filters: VehicleSearch = {
     page: 1,
     pageSize: 6,
@@ -91,6 +96,24 @@ describe('VehiclesService', () => {
 
     await expect(service.findActiveById(vehicle.id)).rejects.toBeInstanceOf(
       NotFoundException,
+    );
+  });
+
+  it('creates a temporary content URL only for an active uploaded image', async () => {
+    const image = {
+      altText: 'Tesla Model Y',
+      id: '22222222-2222-4222-8222-222222222222',
+      isCover: true,
+      sortOrder: 0,
+      storageKey: 'vehicle-images/user/vehicle/photo.webp',
+    };
+    jest.mocked(repository.findActiveImage).mockResolvedValue(image);
+    jest
+      .mocked(storage.createViewUrl)
+      .mockResolvedValue('https://storage.example/view');
+
+    await expect(service.imageContentUrl(image.id)).resolves.toBe(
+      'https://storage.example/view',
     );
   });
 });

@@ -40,6 +40,11 @@ Todas as rotas exigem cookie de sessão. As mutações também validam a origem 
 - `POST /api/v1/hosts/vehicles` — cria um veículo em rascunho;
 - `PATCH /api/v1/hosts/vehicles/:id` — edita o veículo próprio;
 - `PATCH /api/v1/hosts/vehicles/:id/status` — publica, pausa ou envia para manutenção;
+- `POST /api/v1/hosts/vehicles/:id/images/upload-url` — prepara o upload direto de uma foto;
+- `POST /api/v1/hosts/vehicles/:id/images/complete` — valida e adiciona a foto enviada;
+- `PATCH /api/v1/hosts/vehicles/:id/images/order` — reordena as fotos;
+- `PATCH /api/v1/hosts/vehicles/:id/images/:imageId/cover` — define a capa;
+- `DELETE /api/v1/hosts/vehicles/:id/images/:imageId` — remove uma foto;
 - `GET /api/v1/hosts/bookings` — lista reservas recebidas;
 - `GET /api/v1/hosts/availability-blocks` — lista bloqueios;
 - `POST /api/v1/hosts/availability-blocks` — cria um bloqueio;
@@ -50,5 +55,5 @@ Todas as rotas exigem cookie de sessão. As mutações também validam a origem 
 
 - O financeiro mostra valores brutos reais; taxas, repasses e saque não foram inventados sem uma regra comercial definida.
 - Mensagens entre locatário e anfitrião estão disponíveis na caixa unificada `/mensagens` implementada na Etapa 15.
-- Upload e gestão de fotos dos veículos ainda não fazem parte do formulário do anfitrião; imagens já existentes continuam sendo exibidas.
+- Cada veículo aceita até 10 fotos JPG, PNG ou WebP, com no máximo 8 MB cada. O conteúdo é validado depois do upload direto e pelo menos uma foto é obrigatória para publicar o anúncio.
 - A criação de bloqueio e de reserva é protegida individualmente contra concorrência; uma transação única entre as duas tabelas será necessária para garantias mais fortes em alta escala.

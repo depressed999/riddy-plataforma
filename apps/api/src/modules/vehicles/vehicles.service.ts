@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import { PrivateStorageService } from '../kyc/private-storage.service';
 import { VehiclesRepository } from './vehicles.repository';
 import { VehiclesCacheService } from './vehicles-cache.service';
 import type {
@@ -20,6 +21,8 @@ export class VehiclesService {
     private readonly vehiclesRepository: VehiclesRepository,
     @Inject(VehiclesCacheService)
     private readonly cache: VehiclesCacheService,
+    @Inject(PrivateStorageService)
+    private readonly storage: PrivateStorageService,
   ) {}
 
   search(filters: VehicleSearch): Promise<PaginatedVehicles> {
@@ -52,5 +55,13 @@ export class VehiclesService {
     }
 
     return vehicle;
+  }
+
+  async imageContentUrl(imageId: string): Promise<string> {
+    const image = await this.vehiclesRepository.findActiveImage(imageId);
+    if (!image || !image.storageKey.startsWith('vehicle-images/')) {
+      throw new NotFoundException('Foto não encontrada.');
+    }
+    return this.storage.createViewUrl(image.storageKey);
   }
 }

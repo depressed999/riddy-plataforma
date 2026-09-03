@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { publicVehicleImageUrl } from '@/lib/vehicle-image-url';
 
 import type { Vehicle } from './marketplace.types';
 
@@ -28,7 +29,7 @@ export function MarketplaceVehicleCard({ vehicle }: { vehicle: Vehicle }) {
             className="object-cover transition-transform duration-200 group-hover:scale-[1.02]"
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            src={`/${cover.storageKey}`}
+            src={publicVehicleImageUrl(cover)}
           />
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">

@@ -1,5 +1,6 @@
 import type {
   Vehicle,
+  VehicleImage,
   VehicleStatus,
   VehicleType,
 } from '../vehicles/vehicles.types';
@@ -90,3 +91,26 @@ export type HostVehicleStatusInput = {
 };
 
 export type HostVehicle = Vehicle;
+
+export type VehicleImageUploadInput = {
+  altText?: string;
+  fileName: string;
+  mimeType: 'image/jpeg' | 'image/png' | 'image/webp';
+  sizeBytes: number;
+};
+
+export type VehicleImageUpload = {
+  expiresAt: string;
+  headers: Record<string, string>;
+  storageKey: string;
+  uploadUrl: string;
+};
+
+export type VehicleImageCompletion = {
+  altText?: string;
+  mimeType: VehicleImageUploadInput['mimeType'];
+  sizeBytes: number;
+  storageKey: string;
+};
+
+export type HostVehicleImage = VehicleImage;

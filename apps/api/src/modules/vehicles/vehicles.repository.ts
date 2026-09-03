@@ -102,6 +102,16 @@ export class VehiclesRepository {
     );
   }
 
+  async findActiveImage(imageId: string): Promise<VehicleImage | null> {
+    const [row] = await this.databaseService.database
+      .select({ image: vehicleImages })
+      .from(vehicleImages)
+      .innerJoin(vehicles, eq(vehicleImages.vehicleId, vehicles.id))
+      .where(and(eq(vehicleImages.id, imageId), eq(vehicles.status, 'active')))
+      .limit(1);
+    return row ? this.toImage(row.image) : null;
+  }
+
   private groupImagesByVehicle(
     imageRows: VehicleImageSelect[],
   ): Map<string, VehicleImage[]> {

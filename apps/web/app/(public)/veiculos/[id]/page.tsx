@@ -10,6 +10,7 @@ import { getVehicle } from '@/features/marketplace/marketplace.service';
 import { ReservationPanel } from '@/features/vehicle-details/reservation-panel';
 import { VehicleGallery } from '@/features/vehicle-details/vehicle-gallery';
 import { VehicleInformation } from '@/features/vehicle-details/vehicle-information';
+import { publicVehicleImageUrl } from '@/lib/vehicle-image-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +40,9 @@ export async function generateMetadata({
     openGraph: {
       description,
       ...(cover
-        ? { images: [{ alt: cover.altText, url: `/${cover.storageKey}` }] }
+        ? {
+            images: [{ alt: cover.altText, url: publicVehicleImageUrl(cover) }],
+          }
         : {}),
       title: `${name} | Riddy`,
       type: 'website',

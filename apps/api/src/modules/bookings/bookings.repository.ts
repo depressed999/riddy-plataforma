@@ -224,6 +224,7 @@ export class BookingsRepository {
 
     const rows = await this.databaseService.database
       .select({
+        id: vehicleImages.id,
         storageKey: vehicleImages.storageKey,
         vehicleId: vehicleImages.vehicleId,
       })
@@ -235,7 +236,14 @@ export class BookingsRepository {
         ),
       );
 
-    return new Map(rows.map((row) => [row.vehicleId, row.storageKey]));
+    return new Map(
+      rows.map((row) => [
+        row.vehicleId,
+        row.storageKey.startsWith('vehicle-images/')
+          ? `/api/v1/vehicles/images/${row.id}/content`
+          : row.storageKey,
+      ]),
+    );
   }
 
   private toDomain(booking: BookingSelect, vehicle: BookingVehicle): Booking {

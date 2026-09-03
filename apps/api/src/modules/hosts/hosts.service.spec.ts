@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import type { PrivateStorageService } from '../kyc/private-storage.service';
 import type { HostsRepository } from './hosts.repository';
 import { HostsService } from './hosts.service';
 import type { HostProfile, HostVehicle } from './hosts.types';
@@ -15,13 +16,17 @@ const vehicleId = '22222222-2222-4222-8222-222222222222';
 describe('HostsService', () => {
   let repository: jest.Mocked<HostsRepository>;
   let service: HostsService;
+  let storage: jest.Mocked<PrivateStorageService>;
 
   beforeEach(() => {
     repository = {
+      addVehicleImage: jest.fn(),
       createAvailabilityBlock: jest.fn(),
       createVehicle: jest.fn(),
       deleteAvailabilityBlock: jest.fn(),
+      deleteVehicleImage: jest.fn(),
       findProfile: jest.fn(),
+      findOwnedVehicleImage: jest.fn(),
       findVehicle: jest.fn(),
       getDashboard: jest.fn(),
       getFinance: jest.fn(),
@@ -30,13 +35,21 @@ describe('HostsService', () => {
       listAvailabilityBlocks: jest.fn(),
       listBookings: jest.fn(),
       listVehicles: jest.fn(),
+      reorderVehicleImages: jest.fn(),
+      setVehicleImageCover: jest.fn(),
       setProfileStatus: jest.fn(),
       updateProfile: jest.fn(),
       updateVehicle: jest.fn(),
       updateVehicleStatus: jest.fn(),
       upsertProfile: jest.fn(),
     } as unknown as jest.Mocked<HostsRepository>;
-    service = new HostsService(repository);
+    storage = {
+      createUploadUrl: jest.fn(),
+      createViewUrl: jest.fn(),
+      deleteObject: jest.fn(),
+      verifyObject: jest.fn(),
+    } as unknown as jest.Mocked<PrivateStorageService>;
+    service = new HostsService(repository, storage);
     repository.findProfile.mockResolvedValue(profileFixture());
     repository.findVehicle.mockResolvedValue(vehicleFixture());
     repository.getKycStatus.mockResolvedValue('approved');
@@ -135,6 +148,63 @@ describe('HostsService', () => {
       service.updateVehicleStatus(userId, vehicleId, { status: 'active' }),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(repository.updateVehicleStatus).not.toHaveBeenCalled();
+  });
+
+  it('does not publish a vehicle without a photo', async () => {
+    await expect(
+      service.updateVehicleStatus(userId, vehicleId, { status: 'active' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(repository.updateVehicleStatus).not.toHaveBeenCalled();
+  });
+
+  it('prepares and validates a direct vehicle photo upload', async () => {
+    storage.createUploadUrl.mockResolvedValue({
+      expiresAt: new Date('2026-09-03T12:05:00.000Z'),
+      headers: { 'content-type': 'image/webp' },
+      url: 'https://storage.example/upload',
+    });
+    repository.addVehicleImage.mockResolvedValue(
+      vehicleFixture({
+        images: [
+          {
+            altText: 'Jeep Compass - frente',
+            id: '44444444-4444-4444-8444-444444444444',
+            isCover: true,
+            sortOrder: 0,
+            storageKey: `vehicle-images/${userId}/${vehicleId}/55555555-5555-4555-8555-555555555555.webp`,
+          },
+        ],
+      }),
+    );
+
+    const prepared = await service.prepareVehicleImageUpload(
+      userId,
+      vehicleId,
+      {
+        fileName: 'frente.webp',
+        mimeType: 'image/webp',
+        sizeBytes: 2048,
+      },
+    );
+    expect(prepared.storageKey).toMatch(
+      new RegExp(`^vehicle-images/${userId}/${vehicleId}/.+\\.webp$`),
+    );
+
+    await service.completeVehicleImageUpload(userId, vehicleId, {
+      altText: 'Jeep Compass - frente',
+      mimeType: 'image/webp',
+      sizeBytes: 2048,
+      storageKey: `vehicle-images/${userId}/${vehicleId}/55555555-5555-4555-8555-555555555555.webp`,
+    });
+
+    expect(storage.verifyObject).toHaveBeenCalledWith(
+      expect.stringContaining(`vehicle-images/${userId}/${vehicleId}/`),
+      'image/webp',
+      2048,
+    );
+    expect(repository.addVehicleImage).toHaveBeenCalledWith(
+      expect.objectContaining({ altText: 'Jeep Compass - frente', vehicleId }),
+    );
   });
 
   it('rejects access to a vehicle owned by another account', async () => {

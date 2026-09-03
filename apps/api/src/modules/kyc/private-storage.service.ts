@@ -270,6 +270,13 @@ function detectMimeType(bytes: Uint8Array): string | null {
     return 'image/png';
   }
   if (
+    bytes.length >= 12 &&
+    String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' &&
+    String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP'
+  ) {
+    return 'image/webp';
+  }
+  if (
     bytes.length >= 5 &&
     String.fromCharCode(...bytes.slice(0, 5)) === '%PDF-'
   ) {

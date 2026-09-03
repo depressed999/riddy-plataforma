@@ -256,6 +256,63 @@ export class UpdateHostVehicleStatusDto {
   status!: VehicleStatus;
 }
 
+export class PrepareVehicleImageUploadDto {
+  @ApiProperty({ example: 'frente-do-veiculo.jpg', maxLength: 180 })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(180)
+  fileName!: string;
+
+  @ApiProperty({ enum: ['image/jpeg', 'image/png', 'image/webp'] })
+  @IsEnum(['image/jpeg', 'image/png', 'image/webp'])
+  mimeType!: 'image/jpeg' | 'image/png' | 'image/webp';
+
+  @ApiProperty({ maximum: 8_388_608, minimum: 1 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(8_388_608)
+  sizeBytes!: number;
+
+  @ApiPropertyOptional({ maxLength: 240 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(240)
+  altText?: string;
+}
+
+export class CompleteVehicleImageUploadDto {
+  @ApiProperty({ maxLength: 512 })
+  @IsString()
+  @MaxLength(512)
+  storageKey!: string;
+
+  @ApiProperty({ enum: ['image/jpeg', 'image/png', 'image/webp'] })
+  @IsEnum(['image/jpeg', 'image/png', 'image/webp'])
+  mimeType!: 'image/jpeg' | 'image/png' | 'image/webp';
+
+  @ApiProperty({ maximum: 8_388_608, minimum: 1 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(8_388_608)
+  sizeBytes!: number;
+
+  @ApiPropertyOptional({ maxLength: 240 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(240)
+  altText?: string;
+}
+
+export class ReorderVehicleImagesDto {
+  @ApiProperty({ format: 'uuid', isArray: true, maxItems: 10 })
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsUUID('4', { each: true })
+  imageIds!: string[];
+}
+
 export class CreateAvailabilityBlockDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID('4')

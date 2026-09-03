@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Redirect,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -28,9 +29,12 @@ import type { PublicUser } from '../auth/auth.types';
 import { SessionAuthGuard } from '../auth/session-auth.guard';
 import { TrustedOriginGuard } from '../auth/trusted-origin.guard';
 import {
+  CompleteVehicleImageUploadDto,
   CreateAvailabilityBlockDto,
   CreateHostVehicleDto,
   OnboardHostDto,
+  PrepareVehicleImageUploadDto,
+  ReorderVehicleImagesDto,
   UpdateHostProfileDto,
   UpdateHostVehicleDto,
   UpdateHostVehicleStatusDto,
@@ -128,6 +132,82 @@ export class HostsController {
     @Body() input: UpdateHostVehicleStatusDto,
   ): Promise<HostVehicle> {
     return this.hostsService.updateVehicleStatus(user.id, id, input);
+  }
+
+  @Post('vehicles/:id/images/upload-url')
+  @UseGuards(TrustedOriginGuard)
+  @ApiOperation({ summary: 'Prepara o envio direto de uma foto do veículo' })
+  @ApiBody({ type: PrepareVehicleImageUploadDto })
+  @ApiCreatedResponse()
+  prepareVehicleImageUpload(
+    @CurrentUser() user: PublicUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() input: PrepareVehicleImageUploadDto,
+  ) {
+    return this.hostsService.prepareVehicleImageUpload(user.id, id, input);
+  }
+
+  @Post('vehicles/:id/images/complete')
+  @UseGuards(TrustedOriginGuard)
+  @ApiOperation({ summary: 'Valida e adiciona a foto enviada ao veículo' })
+  @ApiBody({ type: CompleteVehicleImageUploadDto })
+  @ApiCreatedResponse()
+  completeVehicleImageUpload(
+    @CurrentUser() user: PublicUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() input: CompleteVehicleImageUploadDto,
+  ): Promise<HostVehicle> {
+    return this.hostsService.completeVehicleImageUpload(user.id, id, input);
+  }
+
+  @Get('vehicles/:id/images/:imageId/content')
+  @Redirect('', HttpStatus.FOUND)
+  @ApiOperation({ summary: 'Abre uma foto do próprio veículo' })
+  async getVehicleImageContent(
+    @CurrentUser() user: PublicUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('imageId', new ParseUUIDPipe({ version: '4' })) imageId: string,
+  ): Promise<{ url: string }> {
+    return {
+      url: await this.hostsService.vehicleImageContentUrl(user.id, id, imageId),
+    };
+  }
+
+  @Patch('vehicles/:id/images/order')
+  @UseGuards(TrustedOriginGuard)
+  @ApiOperation({ summary: 'Reordena todas as fotos do veículo' })
+  @ApiBody({ type: ReorderVehicleImagesDto })
+  @ApiOkResponse()
+  reorderVehicleImages(
+    @CurrentUser() user: PublicUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() input: ReorderVehicleImagesDto,
+  ): Promise<HostVehicle> {
+    return this.hostsService.reorderVehicleImages(user.id, id, input.imageIds);
+  }
+
+  @Patch('vehicles/:id/images/:imageId/cover')
+  @UseGuards(TrustedOriginGuard)
+  @ApiOperation({ summary: 'Define a foto de capa do veículo' })
+  @ApiOkResponse()
+  setVehicleImageCover(
+    @CurrentUser() user: PublicUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('imageId', new ParseUUIDPipe({ version: '4' })) imageId: string,
+  ): Promise<HostVehicle> {
+    return this.hostsService.setVehicleImageCover(user.id, id, imageId);
+  }
+
+  @Delete('vehicles/:id/images/:imageId')
+  @UseGuards(TrustedOriginGuard)
+  @ApiOperation({ summary: 'Remove uma foto do veículo' })
+  @ApiOkResponse()
+  deleteVehicleImage(
+    @CurrentUser() user: PublicUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('imageId', new ParseUUIDPipe({ version: '4' })) imageId: string,
+  ): Promise<HostVehicle> {
+    return this.hostsService.deleteVehicleImage(user.id, id, imageId);
   }
 
   @Get('bookings')

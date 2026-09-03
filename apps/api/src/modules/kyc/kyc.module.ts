@@ -8,6 +8,7 @@ import { PrivateStorageService } from './private-storage.service';
 
 @Module({
   controllers: [KycController],
+  exports: [PrivateStorageService],
   imports: [AuthModule],
   providers: [KycRepository, KycService, PrivateStorageService],
 })

@@ -4,11 +4,14 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   Optional,
 } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 
 import { CacheService } from '../../infrastructure/redis/cache.service';
+import { PrivateStorageService } from '../kyc/private-storage.service';
 import { HostsRepository } from './hosts.repository';
 import type {
   HostAvailabilityBlock,
@@ -20,13 +23,27 @@ import type {
   HostVehicleInput,
   HostVehicleUpdate,
   HostVehicleStatusInput,
+  VehicleImageCompletion,
+  VehicleImageUpload,
+  VehicleImageUploadInput,
 } from './hosts.types';
+
+const MAX_VEHICLE_IMAGES = 10;
+const imageExtensions: Record<VehicleImageUploadInput['mimeType'], string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+};
 
 @Injectable()
 export class HostsService {
+  private readonly logger = new Logger(HostsService.name);
+
   constructor(
     @Inject(HostsRepository)
     private readonly repository: HostsRepository,
+    @Inject(PrivateStorageService)
+    private readonly storage: PrivateStorageService,
     @Optional()
     @Inject(CacheService)
     private readonly cache?: CacheService,
@@ -145,6 +162,12 @@ export class HostsService {
           'Conclua e aprove sua verificação de identidade antes de publicar veículos.',
         );
       }
+      const vehicle = await this.ownedVehicle(userId, vehicleId);
+      if (vehicle.images.length === 0) {
+        throw new BadRequestException(
+          'Adicione pelo menos uma foto antes de publicar o veículo.',
+        );
+      }
     }
     const updated = await this.repository.updateVehicleStatus(
       userId,
@@ -153,6 +176,156 @@ export class HostsService {
     );
     if (!updated) {
       throw new NotFoundException('Veículo não encontrado.');
+    }
+    await this.cache?.invalidate('vehicles');
+    return updated;
+  }
+
+  async prepareVehicleImageUpload(
+    userId: string,
+    vehicleId: string,
+    input: VehicleImageUploadInput,
+  ): Promise<VehicleImageUpload> {
+    await this.requireHost(userId);
+    const vehicle = await this.ownedVehicle(userId, vehicleId);
+    if (vehicle.images.length >= MAX_VEHICLE_IMAGES) {
+      throw new ConflictException(
+        `Cada veículo pode ter no máximo ${MAX_VEHICLE_IMAGES} fotos.`,
+      );
+    }
+    const extension = imageExtensions[input.mimeType];
+    const storageKey = `vehicle-images/${userId}/${vehicleId}/${randomUUID()}${extension}`;
+    const signed = await this.storage.createUploadUrl(
+      storageKey,
+      input.mimeType,
+    );
+    return {
+      expiresAt: signed.expiresAt.toISOString(),
+      headers: signed.headers,
+      storageKey,
+      uploadUrl: signed.url,
+    };
+  }
+
+  async completeVehicleImageUpload(
+    userId: string,
+    vehicleId: string,
+    input: VehicleImageCompletion,
+  ): Promise<HostVehicle> {
+    await this.requireHost(userId);
+    const vehicle = await this.ownedVehicle(userId, vehicleId);
+    if (vehicle.images.length >= MAX_VEHICLE_IMAGES) {
+      throw new ConflictException(
+        `Cada veículo pode ter no máximo ${MAX_VEHICLE_IMAGES} fotos.`,
+      );
+    }
+    const expectedPrefix = `vehicle-images/${userId}/${vehicleId}/`;
+    const expectedExtension = imageExtensions[input.mimeType];
+    if (
+      !input.storageKey.startsWith(expectedPrefix) ||
+      !input.storageKey.endsWith(expectedExtension)
+    ) {
+      throw new BadRequestException('A autorização desta foto é inválida.');
+    }
+    await this.storage.verifyObject(
+      input.storageKey,
+      input.mimeType,
+      input.sizeBytes,
+    );
+    const altText =
+      input.altText?.trim() ||
+      `${vehicle.make} ${vehicle.model} - foto ${vehicle.images.length + 1}`;
+    try {
+      const updated = await this.repository.addVehicleImage({
+        altText,
+        storageKey: input.storageKey,
+        vehicleId,
+      });
+      await this.cache?.invalidate('vehicles');
+      return updated;
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new ConflictException('Esta foto já foi adicionada ao veículo.');
+      }
+      throw error;
+    }
+  }
+
+  async vehicleImageContentUrl(
+    userId: string,
+    vehicleId: string,
+    imageId: string,
+  ): Promise<string> {
+    await this.requireHost(userId);
+    const image = await this.repository.findOwnedVehicleImage(
+      userId,
+      vehicleId,
+      imageId,
+    );
+    if (!image || !image.storageKey.startsWith('vehicle-images/')) {
+      throw new NotFoundException('Foto não encontrada.');
+    }
+    return this.storage.createViewUrl(image.storageKey);
+  }
+
+  async setVehicleImageCover(
+    userId: string,
+    vehicleId: string,
+    imageId: string,
+  ): Promise<HostVehicle> {
+    await this.requireHost(userId);
+    await this.ownedVehicleImage(userId, vehicleId, imageId);
+    const updated = await this.repository.setVehicleImageCover(
+      vehicleId,
+      imageId,
+    );
+    await this.cache?.invalidate('vehicles');
+    return updated;
+  }
+
+  async reorderVehicleImages(
+    userId: string,
+    vehicleId: string,
+    imageIds: string[],
+  ): Promise<HostVehicle> {
+    await this.requireHost(userId);
+    const vehicle = await this.ownedVehicle(userId, vehicleId);
+    const currentIds = vehicle.images.map((image) => image.id).sort();
+    const requestedIds = [...imageIds].sort();
+    if (
+      currentIds.length !== requestedIds.length ||
+      new Set(requestedIds).size !== requestedIds.length ||
+      currentIds.some((id, index) => id !== requestedIds[index])
+    ) {
+      throw new BadRequestException(
+        'A ordem deve incluir todas as fotos do veículo uma única vez.',
+      );
+    }
+    const updated = await this.repository.reorderVehicleImages(
+      vehicleId,
+      imageIds,
+    );
+    await this.cache?.invalidate('vehicles');
+    return updated;
+  }
+
+  async deleteVehicleImage(
+    userId: string,
+    vehicleId: string,
+    imageId: string,
+  ): Promise<HostVehicle> {
+    await this.requireHost(userId);
+    const image = await this.ownedVehicleImage(userId, vehicleId, imageId);
+    const updated = await this.repository.deleteVehicleImage(
+      vehicleId,
+      imageId,
+    );
+    if (image.storageKey.startsWith('vehicle-images/')) {
+      await this.storage.deleteObject(image.storageKey).catch((error) => {
+        this.logger.warn(
+          `Vehicle image object could not be removed: ${String(error)}`,
+        );
+      });
     }
     await this.cache?.invalidate('vehicles');
     return updated;
@@ -264,6 +437,23 @@ export class HostsService {
     }
     return vehicle;
   }
+
+  private async ownedVehicleImage(
+    userId: string,
+    vehicleId: string,
+    imageId: string,
+  ) {
+    await this.ownedVehicle(userId, vehicleId);
+    const image = await this.repository.findOwnedVehicleImage(
+      userId,
+      vehicleId,
+      imageId,
+    );
+    if (!image) {
+      throw new NotFoundException('Foto não encontrada.');
+    }
+    return image;
+  }
 }
 
 function normalizeVehicle(input: HostVehicleInput): HostVehicleInput {
@@ -321,5 +511,14 @@ function isCalendarConstraintViolation(error: unknown): boolean {
     typeof error === 'object' &&
     'code' in error &&
     (error.code === '23505' || error.code === '23P01'),
+  );
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return Boolean(
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === '23505',
   );
 }

@@ -7,6 +7,7 @@ import type {
   HostVehicle,
   HostVehicleInput,
   HostVehicleStatus,
+  VehicleImageUpload,
 } from './host.types';
 
 export class HostUnauthorizedError extends Error {}
@@ -76,6 +77,81 @@ export function updateHostVehicleStatus(
       headers: { 'content-type': 'application/json' },
       method: 'PATCH',
     },
+  );
+}
+
+export async function uploadHostVehicleImage(
+  vehicleId: string,
+  file: File,
+  altText?: string,
+): Promise<HostVehicle> {
+  const prepared = await hostRequest<VehicleImageUpload>(
+    `/api/v1/hosts/vehicles/${vehicleId}/images/upload-url`,
+    {
+      body: JSON.stringify({
+        altText,
+        fileName: file.name,
+        mimeType: file.type,
+        sizeBytes: file.size,
+      }),
+      headers: { 'content-type': 'application/json' },
+      method: 'POST',
+    },
+  );
+  const uploadResponse = await fetch(prepared.uploadUrl, {
+    body: file,
+    headers: prepared.headers,
+    method: 'PUT',
+  });
+  if (!uploadResponse.ok) {
+    throw new Error('O storage recusou o envio da foto. Tente novamente.');
+  }
+  return hostRequest<HostVehicle>(
+    `/api/v1/hosts/vehicles/${vehicleId}/images/complete`,
+    {
+      body: JSON.stringify({
+        altText,
+        mimeType: file.type,
+        sizeBytes: file.size,
+        storageKey: prepared.storageKey,
+      }),
+      headers: { 'content-type': 'application/json' },
+      method: 'POST',
+    },
+  );
+}
+
+export function setHostVehicleImageCover(
+  vehicleId: string,
+  imageId: string,
+): Promise<HostVehicle> {
+  return hostRequest<HostVehicle>(
+    `/api/v1/hosts/vehicles/${vehicleId}/images/${imageId}/cover`,
+    { method: 'PATCH' },
+  );
+}
+
+export function reorderHostVehicleImages(
+  vehicleId: string,
+  imageIds: string[],
+): Promise<HostVehicle> {
+  return hostRequest<HostVehicle>(
+    `/api/v1/hosts/vehicles/${vehicleId}/images/order`,
+    {
+      body: JSON.stringify({ imageIds }),
+      headers: { 'content-type': 'application/json' },
+      method: 'PATCH',
+    },
+  );
+}
+
+export function deleteHostVehicleImage(
+  vehicleId: string,
+  imageId: string,
+): Promise<HostVehicle> {
+  return hostRequest<HostVehicle>(
+    `/api/v1/hosts/vehicles/${vehicleId}/images/${imageId}`,
+    { method: 'DELETE' },
   );
 }
 

@@ -27,7 +27,7 @@ export function createSecurityHeaders(options: {
     "form-action 'self'",
     "frame-ancestors 'none'",
     'frame-src https://*.mercadopago.com https://*.mercadopago.com.br https://*.mercadolibre.com',
-    "img-src 'self' data: blob: https://*.mercadopago.com https://*.mercadopago.com.br https://*.mercadolibre.com",
+    `img-src 'self' data: blob: ${storageOrigin} https://*.mercadopago.com https://*.mercadopago.com.br https://*.mercadolibre.com`,
     "manifest-src 'self'",
     "object-src 'none'",
     `script-src ${scriptSources.join(' ')}`,
