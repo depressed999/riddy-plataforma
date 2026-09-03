@@ -4,8 +4,6 @@ import type {
   ConversationThread,
 } from './messages.types';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-
 export class MessagesUnauthorizedError extends Error {}
 
 export function listConversations(): Promise<ConversationSummary[]> {
@@ -62,7 +60,7 @@ async function messagesRequest<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
-  const response = await fetch(`${apiUrl}${path}`, {
+  const response = await fetch(path, {
     credentials: 'include',
     ...init,
   });

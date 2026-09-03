@@ -13,6 +13,7 @@ A Etapa 18 fecha o plano funcional com proteções de aplicação, observabilida
 - A inicialização falha cedo quando variáveis de produção obrigatórias estão ausentes, URLs públicas não usam HTTPS ou credenciais conhecidas de desenvolvimento continuam configuradas.
 - O worker valida apenas PostgreSQL, Redis e o webhook de recuperação, seguindo o princípio do menor conjunto de segredos.
 - O Web envia CSP, `Permissions-Policy`, `Referrer-Policy`, proteção contra framing e MIME sniffing. Rotas autenticadas recebem `private, no-store`.
+- O navegador acessa a API pelo proxy de mesma origem `/api/v1`, evitando cookies de sessão third-party entre serviços de hospedagem distintos.
 
 ### Política de conteúdo
 
@@ -59,7 +60,7 @@ O Dependabot acompanha dependências npm/pnpm e GitHub Actions semanalmente. Um 
 
 ## Checklist antes de publicar
 
-- Definir domínio, TLS, proxy confiável e as origens HTTPS de Web, API, Google OAuth e Mercado Pago.
+- Definir domínio, TLS, proxy confiável e as origens HTTPS de Web, API, Google OAuth e Mercado Pago. No Web, `API_URL` deve apontar somente para a origem interna ou pública da API; não exponha essa URL como variável `NEXT_PUBLIC_*`.
 - Substituir todas as credenciais locais e armazená-las no gerenciador de segredos do provedor.
 - Usar PostgreSQL, Redis e storage gerenciados ou operados com backup, criptografia, retenção e restauração testada.
 - Aplicar migrações como uma etapa controlada antes de liberar a nova versão.

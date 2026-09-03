@@ -4,26 +4,21 @@ import type {
   PaymentContext,
 } from './payments.types';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-
 export class PaymentUnauthorizedError extends Error {}
 
 export async function getPaymentContext(
   bookingId: string,
 ): Promise<PaymentContext> {
-  const response = await fetch(
-    `${apiUrl}/api/v1/payments/booking/${bookingId}`,
-    {
-      credentials: 'include',
-    },
-  );
+  const response = await fetch(`/api/v1/payments/booking/${bookingId}`, {
+    credentials: 'include',
+  });
   return parseResponse<PaymentContext>(response);
 }
 
 export async function createPayment(
   input: CreatePaymentInput,
 ): Promise<Payment> {
-  const response = await fetch(`${apiUrl}/api/v1/payments`, {
+  const response = await fetch('/api/v1/payments', {
     body: JSON.stringify(input),
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -51,7 +46,7 @@ async function paymentAction(
   action: 'cancel' | 'refund',
   idempotencyKey: string,
 ): Promise<Payment> {
-  const response = await fetch(`${apiUrl}/api/v1/payments/${id}/${action}`, {
+  const response = await fetch(`/api/v1/payments/${id}/${action}`, {
     body: JSON.stringify({ idempotencyKey }),
     credentials: 'include',
     headers: { 'content-type': 'application/json' },

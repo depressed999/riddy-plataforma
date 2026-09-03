@@ -1,13 +1,11 @@
 import type { AuthResponse, MessageResponse } from './auth.types';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-
-export const googleAuthUrl = `${apiUrl}/api/v1/auth/google`;
+export const googleAuthUrl = '/api/v1/auth/google';
 export const googleAuthEnabled =
   process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === 'true';
 
 export async function getCurrentUser(): Promise<AuthResponse | null> {
-  const response = await fetch(`${apiUrl}/api/v1/auth/me`, {
+  const response = await fetch('/api/v1/auth/me', {
     credentials: 'include',
   });
 
@@ -51,7 +49,7 @@ export function confirmPasswordRecovery(input: {
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(`${apiUrl}${path}`, {
+  const response = await fetch(path, {
     body: JSON.stringify(body),
     credentials: 'include',
     headers: { 'content-type': 'application/json' },

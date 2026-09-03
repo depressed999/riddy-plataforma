@@ -8,8 +8,6 @@ import type {
   AdminVehicle,
 } from './admin.types';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-
 export function getAdminDashboard(): Promise<AdminDashboard> {
   return request('/api/v1/admin/dashboard');
 }
@@ -67,7 +65,7 @@ export function updateAdminVehicleStatus(
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${apiUrl}${path}`, {
+  const response = await fetch(path, {
     ...init,
     credentials: 'include',
     headers: {

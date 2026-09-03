@@ -1,20 +1,18 @@
 import type { Booking, BookingDates, BookingQuote } from './bookings.types';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-
 export class BookingUnauthorizedError extends Error {}
 
 export async function getBookingQuote(
   dates: BookingDates,
 ): Promise<BookingQuote> {
   const query = new URLSearchParams(dates);
-  const response = await fetch(`${apiUrl}/api/v1/bookings/quote?${query}`);
+  const response = await fetch(`/api/v1/bookings/quote?${query}`);
 
   return parseResponse<BookingQuote>(response);
 }
 
 export async function createBooking(dates: BookingDates): Promise<Booking> {
-  const response = await fetch(`${apiUrl}/api/v1/bookings`, {
+  const response = await fetch('/api/v1/bookings', {
     body: JSON.stringify(dates),
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -25,7 +23,7 @@ export async function createBooking(dates: BookingDates): Promise<Booking> {
 }
 
 export async function getMyBookings(): Promise<Booking[]> {
-  const response = await fetch(`${apiUrl}/api/v1/bookings/mine`, {
+  const response = await fetch('/api/v1/bookings/mine', {
     credentials: 'include',
   });
 
@@ -33,7 +31,7 @@ export async function getMyBookings(): Promise<Booking[]> {
 }
 
 export async function cancelBooking(id: string): Promise<Booking> {
-  const response = await fetch(`${apiUrl}/api/v1/bookings/${id}/cancel`, {
+  const response = await fetch(`/api/v1/bookings/${id}/cancel`, {
     credentials: 'include',
     method: 'PATCH',
   });

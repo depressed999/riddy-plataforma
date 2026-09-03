@@ -8,7 +8,7 @@
     "dev": "next dev",
     "lint": "eslint .",
     "start": "next start",
-    "test": "node --experimental-strip-types --test lib/site-url.test.mjs lib/security-headers.test.mjs",
+    "test": "node --experimental-strip-types --test lib/api-proxy.test.mjs lib/site-url.test.mjs lib/security-headers.test.mjs",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {

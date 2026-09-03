@@ -6,12 +6,10 @@ import type {
   ReviewKycCase,
 } from './kyc.types';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-
 export class KycUnauthorizedError extends Error {}
 
 export async function getKycCase(): Promise<KycCase | null> {
-  const response = await fetch(`${apiUrl}/api/v1/kyc`, {
+  const response = await fetch('/api/v1/kyc', {
     credentials: 'include',
   });
   return parseResponse<KycCase | null>(response);
@@ -93,7 +91,7 @@ export function rejectKycCase(
 }
 
 async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${apiUrl}${path}`, {
+  const response = await fetch(path, {
     credentials: 'include',
     ...init,
   });

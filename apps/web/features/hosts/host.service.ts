@@ -9,8 +9,6 @@ import type {
   HostVehicleStatus,
 } from './host.types';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-
 export class HostUnauthorizedError extends Error {}
 
 export function getHostDashboard(): Promise<HostDashboard> {
@@ -121,7 +119,7 @@ async function hostRequest<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
-  const response = await fetch(`${apiUrl}${path}`, {
+  const response = await fetch(path, {
     credentials: 'include',
     ...init,
   });

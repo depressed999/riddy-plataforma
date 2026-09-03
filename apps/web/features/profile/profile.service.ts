@@ -1,11 +1,9 @@
 import type { ProfileChanges, UserProfile } from './profile.types';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-
 export class ProfileUnauthorizedError extends Error {}
 
 export async function getProfile(): Promise<UserProfile> {
-  const response = await fetch(`${apiUrl}/api/v1/profile`, {
+  const response = await fetch('/api/v1/profile', {
     credentials: 'include',
   });
 
@@ -15,7 +13,7 @@ export async function getProfile(): Promise<UserProfile> {
 export async function updateProfile(
   changes: ProfileChanges,
 ): Promise<UserProfile> {
-  const response = await fetch(`${apiUrl}/api/v1/profile`, {
+  const response = await fetch('/api/v1/profile', {
     body: JSON.stringify(changes),
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
