@@ -30,6 +30,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/features/auth/auth-provider';
 import { MessageConversationButton } from '@/features/messages/message-conversation-button';
+import { isUploadedVehicleImageUrl } from '@/lib/vehicle-image-url';
 
 import {
   BookingUnauthorizedError,
@@ -259,6 +260,7 @@ function BookingCard({
               loading="eager"
               sizes="(max-width: 640px) 100vw, 180px"
               src={`/${booking.vehicle.imageUrl.replace(/^\/+/, '')}`}
+              unoptimized={isUploadedVehicleImageUrl(booking.vehicle.imageUrl)}
             />
           ) : (
             <div className="grid h-full min-h-44 place-items-center text-muted-foreground">

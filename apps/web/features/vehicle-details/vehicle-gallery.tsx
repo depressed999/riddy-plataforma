@@ -5,7 +5,10 @@ import Image from 'next/image';
 import { useState } from 'react';
 
 import { cn } from '@/lib/utils';
-import { publicVehicleImageUrl } from '@/lib/vehicle-image-url';
+import {
+  isUploadedVehicleImage,
+  publicVehicleImageUrl,
+} from '@/lib/vehicle-image-url';
 import type { Vehicle } from '@/features/marketplace/marketplace.types';
 
 export function VehicleGallery({ vehicle }: { vehicle: Vehicle }) {
@@ -38,6 +41,7 @@ export function VehicleGallery({ vehicle }: { vehicle: Vehicle }) {
           priority
           sizes="(max-width: 768px) 100vw, 1400px"
           src={publicVehicleImageUrl(selectedImage)}
+          unoptimized={isUploadedVehicleImage(selectedImage)}
         />
         <span className="absolute right-4 bottom-4 inline-flex items-center gap-2 rounded-md bg-slate-950/75 px-3 py-2 font-heading text-xs font-medium text-white">
           <Images aria-hidden="true" size={15} />
@@ -67,6 +71,7 @@ export function VehicleGallery({ vehicle }: { vehicle: Vehicle }) {
                 fill
                 sizes="112px"
                 src={publicVehicleImageUrl(image)}
+                unoptimized={isUploadedVehicleImage(image)}
               />
             </button>
           ))}

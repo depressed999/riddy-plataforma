@@ -31,7 +31,10 @@ import {
 } from '@/features/bookings/bookings.service';
 import type { Booking, BookingQuote } from '@/features/bookings/bookings.types';
 import type { Vehicle } from '@/features/marketplace/marketplace.types';
-import { publicVehicleImageUrl } from '@/lib/vehicle-image-url';
+import {
+  isUploadedVehicleImage,
+  publicVehicleImageUrl,
+} from '@/lib/vehicle-image-url';
 import {
   getProfile,
   ProfileUnauthorizedError,
@@ -307,6 +310,7 @@ function VehicleSection({ vehicle }: { vehicle: Vehicle }) {
               loading="eager"
               sizes="(max-width: 640px) 100vw, 190px"
               src={publicVehicleImageUrl(cover)}
+              unoptimized={isUploadedVehicleImage(cover)}
             />
           ) : (
             <div className="grid h-full min-h-40 place-items-center text-muted-foreground">
